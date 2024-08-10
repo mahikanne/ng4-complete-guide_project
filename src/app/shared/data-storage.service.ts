@@ -21,7 +21,7 @@ export class DataStorageService {
 
   fetchRecipes() {
    return this.http
-      .get<Recipe[]>('https://localhost:44384/api/Recipe')
+      .get<Recipe[]>('https://localhost:7268/api/Recipe')
       .pipe(map(recipes =>{
         return recipes.map(recipe => {
             return {...recipe,ingredients: recipe.ingredients ? recipe.ingredients : []};

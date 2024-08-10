@@ -2,8 +2,10 @@ import { EventEmitter, Injectable } from '@angular/core';
 import { Recipe } from './recipe.model';
 import { Ingredient } from '../shared/ingredient.model';
 import { ShoppingListService } from '../shopping-list/shopping-list.service';
-import { Subject } from 'rxjs';
+import { Subject, exhaustMap, map, take, tap } from 'rxjs';
 import { DataStorageService } from '../shared/data-storage.service';
+import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class RecipeService {
@@ -24,18 +26,35 @@ export class RecipeService {
   //   ),
   // ];
 
-  private recipes: Recipe[] = []
+  private recipes: Recipe[] = [];
 
-  constructor(private slService: ShoppingListService) {}
+  constructor(
+    private http: HttpClient,
+    private slService: ShoppingListService,
+    private authService: AuthService
+  ) {}
 
-setRecipes(recipes: Recipe[]){
-  this.recipes = recipes;
-  this.recipeChanged.next(this.recipes.slice());
-}
-
+  setRecipes(recipes: Recipe[]) {
+    this.recipes = recipes;
+    this.recipeChanged.next(this.recipes.slice());
+  }
 
   getRecipes() {
-    return this.recipes.slice();
+    //return this.recipes.slice();
+
+    return this.http.get<Recipe[]>('https://localhost:7268/api/Recipe').pipe(
+      map((recipes) => {
+        return recipes.map((recipe) => {
+          return {
+            ...recipe,
+            ingredients: recipe.ingredients ? recipe.ingredients : [],
+          };
+        });
+      }),
+      tap((recipes) => {
+        this.setRecipes(recipes);
+      })
+    );
   }
 
   getrecipe(index: number) {
@@ -47,17 +66,19 @@ setRecipes(recipes: Recipe[]){
   }
 
   addRecipe(recipe: Recipe) {
-    this.recipes.push(recipe);
-    this.recipeChanged.next(this.recipes.slice());
+    //this.recipes.push(recipe);
+    return this.http.post('https://localhost:7268/api/Recipe', recipe);
+    //this.recipeChanged.next(this.recipes.slice());
   }
 
-  updateRecipe(index: number, newrecipe: Recipe) {
-    this.recipes[index] = newrecipe;
-    this.recipeChanged.next(this.recipes.slice());
+  updateRecipe(updatedrecipe: Recipe) {
+    return this.http.put('https://localhost:7268/api/Recipe', updatedrecipe);
+    //this.recipes[index] = newrecipe;
+    //this.recipeChanged.next(this.recipes.slice());
   }
 
-   deleteRecipe(index:number){
-      this.recipes.splice(index,1);
-      this.recipeChanged.next(this.recipes.slice());
-   }
+  deleteRecipe(index: number) {
+    this.recipes.splice(index, 1);
+    this.recipeChanged.next(this.recipes.slice());
+  }
 }
