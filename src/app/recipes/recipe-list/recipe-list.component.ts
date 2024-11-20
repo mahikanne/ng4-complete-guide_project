@@ -3,6 +3,7 @@ import { Recipe } from '../recipe.model';
 import { RecipeService } from '../recipe.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { RefreshService } from 'src/app/shared/refresh.service';
 
 @Component({
   selector: 'app-recipe-list',
@@ -17,7 +18,8 @@ export class RecipeListComponent implements OnInit, OnDestroy {
   constructor(
     private recipeService: RecipeService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private refreshService: RefreshService
   ) {}
   ngOnDestroy(): void {
 
@@ -27,11 +29,19 @@ export class RecipeListComponent implements OnInit, OnDestroy {
   //   .subscribe((recipes: Recipe[]) => {
   //     this.recipes = recipes;
   //   });
+   this.loadrecipes();
+
+  this.refreshService.refresh$.subscribe(()=>{
+    this.loadrecipes();
+  })
+
+    //this.recipeService.recipeChanged.next(this.recipes);
+  }
+
+  loadrecipes(){
     this.subscription =   this.recipeService.getRecipes().subscribe((recipes : Recipe[]) => {
       this.recipes = recipes;
     });
-
-    //this.recipeService.recipeChanged.next(this.recipes);
   }
 
   onNewRecipe() {

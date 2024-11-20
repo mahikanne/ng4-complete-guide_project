@@ -4,6 +4,7 @@ import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { RecipeService } from '../recipe.service';
 import { Recipe } from '../recipe.model';
+import { RefreshService } from 'src/app/shared/refresh.service';
 
 @Component({
   selector: 'app-recipe-edit',
@@ -19,7 +20,8 @@ export class RecipeEditComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private recipeService: RecipeService,
-    private router: Router
+    private router: Router,
+    private refreshService: RefreshService
   ) {}
   ngOnInit(): void {
     this.route.params.subscribe((params: Params) => {
@@ -27,6 +29,15 @@ export class RecipeEditComponent implements OnInit {
       this.editMode = params['id'] != null;
       this.initform();
     });
+
+    this.refreshService.refresh$.subscribe(()=>{
+      this.route.params.subscribe((params: Params) => {
+        this.id = +params['id'];
+        this.editMode = params['id'] != null;
+        this.initform();
+      });
+    })
+
   }
 
   private initform() {
@@ -71,6 +82,7 @@ export class RecipeEditComponent implements OnInit {
     });
   }
 
+
   onSubmit() {
     const recipe = new Recipe(
       this.recipeForm.value['recipeId'],
@@ -82,19 +94,26 @@ export class RecipeEditComponent implements OnInit {
 
     if (this.editMode) {
       this.recipeService.updateRecipe(recipe).subscribe((resData) => {
-        this.recipeService.getRecipes().subscribe((recipes: Recipe[]) => {
+        // this.recipeService.getRecipes().subscribe((recipes: Recipe[]) => {
 
-        });
+        // });
+        this.refreshService.notifyRefresh();
+        this.onCancel();
       });
     } else {
       this.recipeService.addRecipe(recipe).subscribe((resData) => {
         // this.recipeService.getRecipes().subscribe((recipes : Recipe[]) => {
         //   this.recipeService.recipeChanged.next(recipes.slice());
         // });
+        this.refreshService.notifyRefresh();
+        this.router.navigate(['/recipes']);
       });
+
+
+
     }
 
-    this.onCancel();
+
   }
 
   getControls() {
